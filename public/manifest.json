@@ -1,0 +1,9 @@
+{
+  "name": "Plataforma Innova",
+  "short_name": "Innova",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f6f7",
+  "theme_color": "#2f6fce",
+  "icons": []
+}
