@@ -12,7 +12,7 @@ const VACIO = {
   estado: "nuevo", busca_que: "", como_llego: "", observaciones: "", fecha_recontacto: "",
 };
 
-export default function ClienteForm({ inicial, onGuardar, onCancelar }) {
+export default function ClienteForm({ inicial, onGuardar, onCancelar, guardando }) {
   const [form, setForm] = useState(inicial || VACIO);
 
   function set(campo, valor) {
@@ -101,8 +101,10 @@ export default function ClienteForm({ inicial, onGuardar, onCancelar }) {
       <textarea className="input" placeholder="Observaciones" value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
 
       <div className="flex gap-2 pt-2">
-        <button type="submit" className="btn-primary">Guardar</button>
-        <button type="button" className="btn-secondary" onClick={onCancelar}>Cancelar</button>
+        <button type="submit" className="btn-primary" disabled={guardando}>
+          {guardando ? "Guardando…" : "Guardar"}
+        </button>
+        <button type="button" className="btn-secondary" onClick={onCancelar} disabled={guardando}>Cancelar</button>
       </div>
     </form>
   );
