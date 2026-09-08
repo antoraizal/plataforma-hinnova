@@ -19,6 +19,21 @@ export default function ClienteForm({ inicial, onGuardar, onCancelar, guardando 
     setForm((f) => ({ ...f, [campo]: valor }));
   }
 
+  async function importarContacto() {
+    if (!navigator.contacts?.select) {
+      alert("Tu navegador no permite acceder a contactos. Puedes copiar el número manualmente.");
+      return;
+    }
+    try {
+      const [contacto] = await navigator.contacts.select(["name", "tel"], { multiple: false });
+      if (!contacto) return;
+      const name = Array.isArray(contacto.name) ? contacto.name[0] : contacto.name;
+      const tel = Array.isArray(contacto.tel) ? contacto.tel[0] : contacto.tel;
+      const pieces = String(name || "").trim().split(/\s+/);
+      setForm((f) => ({ ...f, nombres: pieces.shift() || f.nombres, apellidos: pieces.join(" ") || f.apellidos, telefono: tel || f.telefono }));
+    } catch (error) { console.warn("Selección de contacto cancelada", error); }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     onGuardar(form);
@@ -40,7 +55,7 @@ export default function ClienteForm({ inicial, onGuardar, onCancelar, guardando 
           <option>Unión libre</option>
         </select>
         <input className="input" type="number" min="0" placeholder="N° de hijos" value={form.num_hijos} onChange={(e) => set("num_hijos", e.target.value)} />
-        <input className="input" placeholder="Teléfono" required value={form.telefono} onChange={(e) => set("telefono", e.target.value)} />
+        <div className="flex gap-2"><input className="input" placeholder="Teléfono" required value={form.telefono} onChange={(e) => set("telefono", e.target.value)} /><button type="button" className="btn-secondary whitespace-nowrap px-3 text-xs" onClick={importarContacto}>Contactos</button></div>
       </div>
       <input className="input" placeholder="Dirección completa" value={form.direccion} onChange={(e) => set("direccion", e.target.value)} />
 
