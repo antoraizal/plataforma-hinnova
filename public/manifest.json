@@ -1,9 +1,11 @@
 {
-  "name": "Plataforma Innova",
-  "short_name": "Innova",
-  "start_url": "/",
+  "name": "HINOVA | Plataforma del equipo",
+  "short_name": "HINOVA",
+  "description": "Espacio interno para crecer juntos como equipo HINOVA.",
+  "start_url": "/inicio",
   "display": "standalone",
-  "background_color": "#f6f6f7",
-  "theme_color": "#2f6fce",
-  "icons": []
+  "background_color": "#fffaf3",
+  "theme_color": "#102b4e",
+  "lang": "es",
+  "icons": [{ "src": "/logo.png", "sizes": "960x360", "type": "image/png", "purpose": "any" }]
 }

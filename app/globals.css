@@ -2,34 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-plomo-50 text-black;
+:root {
+  --hinova-ink: #102b4e;
+  --hinova-blue: #1f6aa5;
+  --hinova-sky: #eaf4fb;
+  --hinova-warm: #fffaf3;
+  --hinova-line: #e7e2da;
 }
 
+* { box-sizing: border-box; }
+
+body {
+  @apply text-black;
+  background: var(--hinova-warm);
+  color: #233044;
+}
+
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { transition: transform 160ms ease-out, box-shadow 180ms ease-out, background-color 180ms ease-out; }
+button:active { transform: scale(.98); }
+
 .card {
-  @apply bg-white rounded-2xl shadow-sm border border-plomo-200 p-4;
+  @apply bg-white rounded-3xl p-5;
+  border: 1px solid var(--hinova-line);
+  box-shadow: 0 12px 30px rgba(16, 43, 78, .07);
 }
 
 .btn-primary {
-  @apply bg-azul-500 hover:bg-azul-600 text-white font-medium rounded-xl px-4 py-2 transition;
+  @apply text-white font-semibold rounded-2xl px-4 py-2.5;
+  background: var(--hinova-blue);
+  box-shadow: 0 8px 18px rgba(31, 106, 165, .20);
 }
-
+.btn-primary:hover { background: #185985; }
 .btn-secondary {
-  @apply bg-plomo-100 hover:bg-plomo-200 text-black font-medium rounded-xl px-4 py-2 transition;
+  @apply font-semibold rounded-2xl px-4 py-2.5;
+  background: #f3f0eb;
+  color: var(--hinova-ink);
 }
+.btn-secondary:hover { background: #e9e3da; }
 
 .input {
-  @apply w-full rounded-xl border border-plomo-300 px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-azul-400;
+  @apply w-full rounded-2xl px-3.5 py-3 bg-white;
+  border: 1px solid #d9dfe5;
+  color: #233044;
 }
+.input:focus { outline: none; border-color: #5d9ac7; box-shadow: 0 0 0 4px rgba(93,154,199,.14); }
 
-.tab {
-  @apply px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition;
-}
+.tab { @apply px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap; }
+.tab-active { background: var(--hinova-blue); color: white; box-shadow: 0 5px 12px rgba(31,106,165,.18); }
+.tab-inactive { background: #f3f0eb; color: #526171; }
 
-.tab-active {
-  @apply bg-azul-500 text-white;
+@media (prefers-reduced-motion: no-preference) {
+  .soft-enter { animation: soft-enter 260ms cubic-bezier(.23,1,.32,1) both; }
 }
-
-.tab-inactive {
-  @apply bg-plomo-100 text-plomo-700;
-}
+@keyframes soft-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
