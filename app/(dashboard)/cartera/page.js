@@ -28,12 +28,33 @@ export default function CarteraPage() {
 
   useEffect(() => { cargar(); }, [profile]);
 
+  const [guardando, setGuardando] = useState(false);
+
+  function limpiarPayload(form) {
+    return {
+      ...form,
+      asesora_id: profile.id,
+      num_hijos: form.num_hijos === "" || form.num_hijos == null ? 0 : Number(form.num_hijos),
+      num_carros: form.num_carros === "" || form.num_carros == null ? 0 : Number(form.num_carros),
+      presupuesto: form.presupuesto === "" || form.presupuesto == null ? null : Number(form.presupuesto),
+      monto_credito: form.monto_credito === "" || form.monto_credito == null ? null : Number(form.monto_credito),
+      fecha_recontacto: form.fecha_recontacto === "" ? null : form.fecha_recontacto,
+    };
+  }
+
   async function guardar(form) {
-    const payload = { ...form, asesora_id: profile.id };
+    setGuardando(true);
+    const payload = limpiarPayload(form);
+    let error;
     if (editando?.id) {
-      await supabase.from("clientes").update(payload).eq("id", editando.id);
+      ({ error } = await supabase.from("clientes").update(payload).eq("id", editando.id));
     } else {
-      await supabase.from("clientes").insert(payload);
+      ({ error } = await supabase.from("clientes").insert(payload));
+    }
+    setGuardando(false);
+    if (error) {
+      alert("No se pudo guardar: " + error.message);
+      return;
     }
     setEditando(null);
     setCreando(false);
@@ -49,6 +70,7 @@ export default function CarteraPage() {
         inicial={editando}
         onGuardar={guardar}
         onCancelar={() => { setEditando(null); setCreando(false); }}
+        guardando={guardando}
       />
     );
   }
