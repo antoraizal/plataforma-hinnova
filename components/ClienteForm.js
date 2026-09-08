@@ -9,7 +9,7 @@ const VACIO = {
   tiene_terreno: false, detalle_terreno: "",
   tiene_departamento: false, detalle_departamento: "",
   num_carros: 0, presupuesto: "", forma_pago: "contado", monto_credito: "",
-  estado: "nuevo", busca_que: "", como_llego: "", observaciones: "", fecha_recontacto: "",
+  tipo_cliente: "comprador", estado: "nuevo", busca_que: "", como_llego: "", observaciones: "", fecha_recontacto: "",
 };
 
 export default function ClienteForm({ inicial, onGuardar, onCancelar, guardando }) {
@@ -95,8 +95,9 @@ export default function ClienteForm({ inicial, onGuardar, onCancelar, guardando 
         )}
       </div>
 
-      <h3 className="font-semibold text-lg pt-2">Seguimiento comercial</h3>
+      <h3 className="font-semibold text-lg pt-2">Tipo de cliente y seguimiento</h3>
       <div className="grid grid-cols-2 gap-3">
+        <select className="input" value={form.tipo_cliente || "comprador"} onChange={(e) => set("tipo_cliente", e.target.value)}><option value="comprador">Comprador</option><option value="vendedor">Vendedor</option></select>
         <select className="input" value={form.estado} onChange={(e) => set("estado", e.target.value)}>
           <option value="nuevo">Nuevo</option>
           <option value="seguimiento">Seguimiento</option>
