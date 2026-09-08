@@ -6,71 +6,10 @@ import { useAuth } from "../../providers";
 
 export default function AnunciosPage() {
   const { profile } = useAuth();
-  const [anuncios, setAnuncios] = useState([]);
-  const [creando, setCreando] = useState(false);
-  const [form, setForm] = useState({ titulo: "", tipo: "casa", descripcion: "", precio: "", foto_url: "" });
-
-  async function cargar() {
-    const { data } = await supabase
-      .from("anuncios")
-      .select("*, profiles(nombre)")
-      .order("created_at", { ascending: false });
-    setAnuncios(data || []);
-  }
-
+  const [anuncios, setAnuncios] = useState([]); const [creando, setCreando] = useState(false); const [subiendo, setSubiendo] = useState(false); const [error, setError] = useState(""); const [form, setForm] = useState({ titulo: "", tipo: "casa", descripcion: "", precio: "", foto_url: "" });
+  async function cargar() { const { data } = await supabase.from("anuncios").select("*, profiles(nombre)").order("created_at", { ascending: false }); setAnuncios(data || []); }
   useEffect(() => { cargar(); }, []);
-
-  async function publicar(e) {
-    e.preventDefault();
-    await supabase.from("anuncios").insert({ ...form, asesora_id: profile.id });
-    setForm({ titulo: "", tipo: "casa", descripcion: "", precio: "", foto_url: "" });
-    setCreando(false);
-    cargar();
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Anuncios del equipo</h1>
-        <button className="btn-primary" onClick={() => setCreando(!creando)}>
-          {creando ? "Cerrar" : "+ Publicar"}
-        </button>
-      </div>
-
-      {creando && (
-        <form onSubmit={publicar} className="card space-y-3">
-          <input className="input" placeholder="Título (ej. Casa 3 dorm. sector La Victoria)" required
-            value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
-          <select className="input" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-            <option value="casa">Casa</option>
-            <option value="terreno">Terreno</option>
-            <option value="departamento">Departamento</option>
-            <option value="otro">Otro</option>
-          </select>
-          <textarea className="input" placeholder="Descripción" value={form.descripcion}
-            onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
-          <input className="input" type="number" placeholder="Precio" value={form.precio}
-            onChange={(e) => setForm({ ...form, precio: e.target.value })} />
-          <input className="input" placeholder="URL de foto (opcional)" value={form.foto_url}
-            onChange={(e) => setForm({ ...form, foto_url: e.target.value })} />
-          <button className="btn-primary w-full">Publicar</button>
-        </form>
-      )}
-
-      <div className="space-y-3">
-        {anuncios.map((a) => (
-          <div key={a.id} className="card">
-            {a.foto_url && <img src={a.foto_url} alt={a.titulo} className="rounded-xl mb-2 w-full object-cover max-h-48" />}
-            <div className="flex justify-between items-start">
-              <h3 className="font-semibold">{a.titulo}</h3>
-              <span className="text-xs bg-plomo-100 rounded-full px-2 py-0.5 capitalize">{a.tipo}</span>
-            </div>
-            <p className="text-sm text-plomo-600">{a.descripcion}</p>
-            {a.precio && <p className="text-sm font-medium">${Number(a.precio).toLocaleString()}</p>}
-            <p className="text-xs text-plomo-500 mt-1">Publicado por {a.profiles?.nombre}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  async function seleccionarImagen(e) { const file = e.target.files?.[0]; if (!file || !profile?.id) return; if (!file.type.startsWith("image/")) { setError("Selecciona una imagen JPG, PNG o WEBP."); return; } if (file.size > 6 * 1024 * 1024) { setError("La imagen debe pesar menos de 6 MB."); return; } setSubiendo(true); setError(""); const extension = file.name.split(".").pop()?.toLowerCase() || "jpg"; const path = `${profile.id}/${crypto.randomUUID()}.${extension}`; const { error: uploadError } = await supabase.storage.from("anuncios").upload(path, file, { cacheControl: "3600", upsert: false }); if (uploadError) { setError("No se pudo subir la imagen: " + uploadError.message); setSubiendo(false); return; } const { data } = supabase.storage.from("anuncios").getPublicUrl(path); setForm((f) => ({ ...f, foto_url: data.publicUrl })); setSubiendo(false); }
+  async function publicar(e) { e.preventDefault(); setError(""); const { error: saveError } = await supabase.from("anuncios").insert({ ...form, precio: form.precio === "" ? null : Number(form.precio), asesora_id: profile.id }); if (saveError) { setError("No se pudo publicar: " + saveError.message); return; } setForm({ titulo: "", tipo: "casa", descripcion: "", precio: "", foto_url: "" }); setCreando(false); cargar(); }
+  return <div className="space-y-5"><section className="flex flex-col gap-4 rounded-3xl bg-[#fff0bf] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold uppercase tracking-wide text-[#a86d08]">Oportunidades del equipo</p><h1 className="mt-1 text-2xl font-bold text-[#102b4e]">Anuncios</h1><p className="mt-1 text-sm text-[#526171]">Comparte propiedades y encuentra nuevas oportunidades.</p></div><button className="btn-primary" onClick={() => setCreando(!creando)}>{creando ? "Cerrar" : "+ Publicar anuncio"}</button></section>{creando && <form onSubmit={publicar} className="card space-y-4"><input className="input" placeholder="Título (ej. Casa 3 dorm. sector La Victoria)" required value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} /><select className="input" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}><option value="casa">Casa</option><option value="terreno">Terreno</option><option value="departamento">Departamento</option><option value="otro">Otro</option></select><textarea className="input" placeholder="Descripción" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} /><input className="input" type="number" min="0" placeholder="Precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: e.target.value })} /><div className="rounded-2xl border border-dashed border-[#b7c9d7] bg-[#f8fbfd] p-4"><label className="block text-sm font-semibold text-[#102b4e]">Foto de la propiedad</label><p className="mt-1 text-xs text-[#718094]">Sube una imagen desde tu celular o computador, máximo 6 MB.</p><input className="mt-3 block w-full text-sm text-[#526171]" type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarImagen} disabled={subiendo} />{subiendo && <p className="mt-2 text-sm text-[#1f6aa5]">Subiendo imagen…</p>}{form.foto_url && <img src={form.foto_url} alt="Vista previa" className="mt-3 max-h-48 w-full rounded-2xl object-cover" />}</div>{error && <p className="rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}<button className="btn-primary w-full" disabled={subiendo}>{subiendo ? "Subiendo imagen…" : "Publicar anuncio"}</button></form>}{!creando && error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}<div className="grid gap-4 md:grid-cols-2">{anuncios.map((a) => <article key={a.id} className="card overflow-hidden p-0">{a.foto_url ? <img src={a.foto_url} alt={a.titulo} className="h-48 w-full object-cover" /> : <div className="flex h-32 items-center justify-center bg-[#eaf4fb] text-4xl text-[#1f6aa5]">⌂</div>}<div className="p-5"><div className="flex items-start justify-between gap-3"><h3 className="font-bold text-[#102b4e]">{a.titulo}</h3><span className="rounded-full bg-[#eaf4fb] px-2.5 py-1 text-xs font-semibold capitalize text-[#1f6aa5]">{a.tipo}</span></div><p className="mt-2 text-sm leading-6 text-[#526171]">{a.descripcion}</p>{a.precio && <p className="mt-3 text-lg font-bold text-[#102b4e]">${Number(a.precio).toLocaleString()}</p>}<p className="mt-3 text-xs text-[#718094]">Publicado por {a.profiles?.nombre}</p></div></article>)}</div></div>;
 }

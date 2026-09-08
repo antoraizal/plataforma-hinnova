@@ -14,7 +14,7 @@
 
 body {
   @apply text-black;
-  background: var(--hinova-warm);
+  background: radial-gradient(circle at 8% 0%, rgba(234,244,251,.85), transparent 28rem), radial-gradient(circle at 92% 18%, rgba(255,240,191,.34), transparent 24rem), var(--hinova-warm);
   color: #233044;
 }
 
