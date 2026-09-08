@@ -1,116 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "../../providers";
 
+const keyOf = (date) => { const d = new Date(date); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const todayKey = keyOf(new Date());
+const dayLabel = (key) => new Date(`${key}T12:00:00`).toLocaleDateString("es-EC", { weekday: "long", day: "numeric", month: "long" });
+const shortDay = (key) => { const d = new Date(`${key}T12:00:00`); return { day: d.toLocaleDateString("es-EC", { weekday: "short" }).replace(".", ""), num: d.getDate() }; };
+
 export default function CalendarioPage() {
   const { profile } = useAuth();
-  const [eventos, setEventos] = useState([]);
-  const [equipo, setEquipo] = useState([]);
-  const [creando, setCreando] = useState(false);
+  const [eventos, setEventos] = useState([]); const [equipo, setEquipo] = useState([]); const [creando, setCreando] = useState(false); const [dia, setDia] = useState(todayKey); const [error, setError] = useState("");
   const [form, setForm] = useState({ titulo: "", fecha_hora: "", notas: "", minutos_antes: 30, responsables: [] });
-
-  async function cargar() {
-    const { data: ev } = await supabase
-      .from("eventos")
-      .select("*, evento_responsables(usuario_id, profiles(nombre))")
-      .order("fecha_hora", { ascending: true });
-    setEventos(ev || []);
-    const { data: perfiles } = await supabase.from("profiles").select("id, nombre");
-    setEquipo(perfiles || []);
-  }
-
+  async function cargar() { const { data: ev, error: evError } = await supabase.from("eventos").select("*, evento_responsables(usuario_id, profiles(nombre))").order("fecha_hora", { ascending: true }); if (evError) setError("No pudimos cargar la agenda. Intenta actualizar la página."); setEventos(ev || []); const { data: perfiles } = await supabase.from("profiles").select("id, nombre"); setEquipo(perfiles || []); }
   useEffect(() => { cargar(); }, []);
-
-  function toggleResponsable(id) {
-    setForm((f) => ({
-      ...f,
-      responsables: f.responsables.includes(id)
-        ? f.responsables.filter((r) => r !== id)
-        : [...f.responsables, id],
-    }));
-  }
-
-  async function crear(e) {
-    e.preventDefault();
-    const { data: evento } = await supabase
-      .from("eventos")
-      .insert({
-        titulo: form.titulo,
-        fecha_hora: form.fecha_hora,
-        notas: form.notas,
-        minutos_antes: form.minutos_antes,
-        creado_por: profile.id,
-      })
-      .select()
-      .single();
-
-    if (evento) {
-      const filas = form.responsables.map((usuario_id) => ({ evento_id: evento.id, usuario_id }));
-      if (filas.length) await supabase.from("evento_responsables").insert(filas);
-    }
-    setForm({ titulo: "", fecha_hora: "", notas: "", minutos_antes: 30, responsables: [] });
-    setCreando(false);
-    cargar();
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Calendario del equipo</h1>
-        <button className="btn-primary" onClick={() => setCreando(!creando)}>
-          {creando ? "Cerrar" : "+ Evento"}
-        </button>
-      </div>
-
-      {creando && (
-        <form onSubmit={crear} className="card space-y-3">
-          <input className="input" placeholder="Título (ej. Visita casa de Gaby)" required
-            value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
-          <input className="input" type="datetime-local" required
-            value={form.fecha_hora} onChange={(e) => setForm({ ...form, fecha_hora: e.target.value })} />
-          <textarea className="input" placeholder="Notas (ej. necesitamos conductor)" value={form.notas}
-            onChange={(e) => setForm({ ...form, notas: e.target.value })} />
-          <div>
-            <label className="text-sm text-plomo-600">Avisar con cuánta anticipación (minutos):</label>
-            <input className="input" type="number" value={form.minutos_antes}
-              onChange={(e) => setForm({ ...form, minutos_antes: e.target.value })} />
-          </div>
-          <div>
-            <p className="text-sm text-plomo-600 mb-1">¿Quién es responsable? (recibe el push)</p>
-            <div className="flex flex-wrap gap-2">
-              {equipo.map((u) => (
-                <button type="button" key={u.id}
-                  className={`tab ${form.responsables.includes(u.id) ? "tab-active" : "tab-inactive"}`}
-                  onClick={() => toggleResponsable(u.id)}>
-                  {u.nombre}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button className="btn-primary w-full">Crear evento</button>
-        </form>
-      )}
-
-      <div className="space-y-3">
-        {eventos.map((ev) => (
-          <div key={ev.id} className="card">
-            <div className="flex justify-between items-start">
-              <h3 className="font-semibold">{ev.titulo}</h3>
-              <span className="text-xs bg-azul-100 text-azul-700 rounded-full px-2 py-0.5">
-                {new Date(ev.fecha_hora).toLocaleString("es-EC", { dateStyle: "medium", timeStyle: "short" })}
-              </span>
-            </div>
-            {ev.notas && <p className="text-sm text-plomo-600">{ev.notas}</p>}
-            {ev.evento_responsables?.length > 0 && (
-              <p className="text-xs text-plomo-500 mt-1">
-                Responsable(s): {ev.evento_responsables.map((r) => r.profiles?.nombre).join(", ")}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const dias = useMemo(() => { const keys = new Set([todayKey]); eventos.forEach((ev) => keys.add(keyOf(ev.fecha_hora))); return [...keys].sort(); }, [eventos]);
+  const delDia = eventos.filter((ev) => keyOf(ev.fecha_hora) === dia);
+  function toggleResponsable(id) { setForm((f) => ({ ...f, responsables: f.responsables.includes(id) ? f.responsables.filter((r) => r !== id) : [...f.responsables, id] })); }
+  async function crear(e) { e.preventDefault(); const { data: evento, error: saveError } = await supabase.from("eventos").insert({ titulo: form.titulo, fecha_hora: form.fecha_hora, notas: form.notas, minutos_antes: Number(form.minutos_antes), creado_por: profile.id }).select().single(); if (saveError) { setError("No se pudo crear el evento: " + saveError.message); return; } if (evento && form.responsables.length) await supabase.from("evento_responsables").insert(form.responsables.map((usuario_id) => ({ evento_id: evento.id, usuario_id }))); setDia(keyOf(form.fecha_hora)); setForm({ titulo: "", fecha_hora: "", notas: "", minutos_antes: 30, responsables: [] }); setCreando(false); cargar(); }
+  return <div className="space-y-5"><section className="flex flex-col gap-4 rounded-3xl bg-[#eaf4fb] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold uppercase tracking-wide text-[#1f6aa5]">Agenda compartida</p><h1 className="mt-1 text-2xl font-bold capitalize text-[#102b4e]">{dayLabel(dia)}</h1><p className="mt-1 text-sm text-[#526171]">Organizamos juntos cada visita, reunión y seguimiento.</p></div><button className="btn-primary" onClick={() => setCreando(!creando)}>{creando ? "Cerrar" : "+ Nuevo evento"}</button></section>{error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}<div className="flex gap-2 overflow-x-auto pb-1">{dias.map((key) => { const d = shortDay(key); const active = dia === key; return <button key={key} onClick={() => setDia(key)} className={`min-w-[72px] rounded-2xl px-3 py-2 text-center transition ${active ? "bg-[#102b4e] text-white shadow-lg" : "bg-white text-[#526171] ring-1 ring-[#e7e2da]"}`}><span className="block text-xs font-semibold uppercase">{d.day}</span><span className="mt-1 block text-xl font-bold">{d.num}</span><span className="mt-1 block text-[10px] opacity-80">{key === todayKey ? "Hoy" : ""}</span></button>; })}</div>{creando && <form onSubmit={crear} className="card space-y-4"><div><p className="text-sm font-semibold text-[#102b4e]">Nuevo compromiso</p><p className="text-xs text-[#718094]">El equipo podrá verlo en la agenda compartida.</p></div><input className="input" placeholder="Título (ej. Visita a propiedad)" required value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} /><input className="input" type="datetime-local" required value={form.fecha_hora} onChange={(e) => setForm({ ...form, fecha_hora: e.target.value })} /><textarea className="input" placeholder="Notas o detalles importantes" value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} /><div><label className="text-sm font-semibold text-[#526171]">Recordatorio</label><input className="input mt-1" type="number" min="0" value={form.minutos_antes} onChange={(e) => setForm({ ...form, minutos_antes: e.target.value })} /><p className="mt-1 text-xs text-[#718094]">Minutos antes del evento</p></div><div><p className="mb-2 text-sm font-semibold text-[#526171]">Responsables</p><div className="flex flex-wrap gap-2">{equipo.map((u) => <button type="button" key={u.id} className={`tab ${form.responsables.includes(u.id) ? "tab-active" : "tab-inactive"}`} onClick={() => toggleResponsable(u.id)}>{u.nombre}</button>)}</div></div><button className="btn-primary w-full">Guardar en la agenda</button></form>}<section className="space-y-3">{delDia.length === 0 && <div className="card py-10 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff0bf] text-2xl">◷</div><h2 className="mt-4 font-bold text-[#102b4e]">Día tranquilo</h2><p className="mt-1 text-sm text-[#718094]">No hay compromisos registrados para esta fecha.</p><button className="btn-primary mt-5" onClick={() => setCreando(true)}>Agregar evento</button></div>}{delDia.map((ev) => <article key={ev.id} className="card flex gap-4"><div className="min-w-[66px] border-r border-[#e7e2da] pr-4 text-center"><span className="block text-lg font-bold text-[#1f6aa5]">{new Date(ev.fecha_hora).toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" })}</span><span className="mt-1 block text-[11px] text-[#718094]">{ev.minutos_antes || 30} min antes</span></div><div className="min-w-0 flex-1"><h3 className="font-bold text-[#102b4e]">{ev.titulo}</h3>{ev.notas && <p className="mt-1 text-sm leading-6 text-[#526171]">{ev.notas}</p>}{ev.evento_responsables?.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{ev.evento_responsables.map((r) => <span key={r.usuario_id} className="rounded-full bg-[#eaf4fb] px-2.5 py-1 text-xs font-semibold text-[#1f6aa5]">{r.profiles?.nombre}</span>)}</div>}</div></article>)}</section></div>;
 }
