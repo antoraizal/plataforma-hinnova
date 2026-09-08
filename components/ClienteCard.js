@@ -4,19 +4,7 @@ import { estadoInfo } from "@/lib/estados";
 
 export default function ClienteCard({ cliente, onClick }) {
   const info = estadoInfo(cliente.estado);
-  return (
-    <button onClick={onClick} className="card w-full text-left hover:shadow-md transition space-y-1">
-      <div className="flex items-center justify-between">
-        <span className="font-semibold">{cliente.nombres} {cliente.apellidos}</span>
-        <span className={`text-xs px-2 py-0.5 rounded-full ${info.color}`}>{info.etiqueta}</span>
-      </div>
-      <p className="text-sm text-plomo-600">{cliente.telefono}</p>
-      {cliente.estado === "en_espera" && cliente.busca_que && (
-        <p className="text-xs text-plomo-500 italic">Busca: {cliente.busca_que}</p>
-      )}
-      {cliente.fecha_recontacto && (
-        <p className="text-xs text-azul-600">Recontactar: {cliente.fecha_recontacto}</p>
-      )}
-    </button>
-  );
+  return <button onClick={onClick} className="card group w-full text-left transition hover:-translate-y-0.5 hover:shadow-lg">
+    <div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eaf4fb] text-lg font-bold text-[#1f6aa5]">{`${cliente.nombres?.[0] || ""}${cliente.apellidos?.[0] || ""}`.toUpperCase()}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div><span className="block text-base font-bold text-[#102b4e]">{cliente.nombres} {cliente.apellidos}</span><span className="mt-0.5 block text-sm text-[#718094]">{cliente.telefono || "Sin teléfono registrado"}</span></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${info.color}`}>{info.etiqueta}</span></div><div className="mt-3 flex flex-wrap gap-2 text-xs text-[#526171]">{cliente.busca_que && <span className="rounded-full bg-[#f6f2ec] px-2.5 py-1">Busca: {cliente.busca_que}</span>}{cliente.fecha_recontacto && <span className="rounded-full bg-[#fff0bf] px-2.5 py-1">Seguimiento: {cliente.fecha_recontacto}</span>}</div></div><span className="text-xl text-[#9eacb8] transition group-hover:translate-x-1">›</span></div>
+  </button>;
 }
